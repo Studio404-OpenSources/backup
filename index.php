@@ -9,7 +9,9 @@ $main_options = array(
 	"slug"=>array(
 		"home"=>"index.php",
 		"addlink"=>"index.php?addbackup=true",
+		"removelink"=>"index.php?removebackup=true",
 	),
+	"uploadable_perm"=>"0755",
 	"lang"=>array(
 		"name"=>"დასახელება",
 		"backup"=>"რეზერვი",
@@ -17,6 +19,8 @@ $main_options = array(
 		"action"=>"მოქმედება",
 		"addlink"=>"დამატება",
 		"errorMsg"=>"მოხდა შეცდომა !", 
+		"success"=>"ოპერაცია წარმატებით დასრულდა !",
+		"delBackup"=>"გნებავთ წაშალოთ მონაცემი ?",
 		"delete"=>"წაშლა", 
 		"download"=>"ჩამოტვირთვა", 
 		"download_pendding"=>"ფაილი ვერ მოიძებნა", 

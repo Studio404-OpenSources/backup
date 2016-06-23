@@ -88,6 +88,13 @@ class backup{
 					"line-height"=>"20px",
 					"color"=>"#555555",
 					"font-size"=>"14px"
+				),
+				"success"=>array(
+					"margin"=>"10px 0px",
+					"padding"=>"0px",
+					"width"=>"100%",
+					"float"=>"left",
+					"clear"=>"both"
 				)
 			)
 		);
@@ -110,9 +117,13 @@ class backup{
 			is_dir($this->option['_root']) && 
 			is_dir($this->option['_path']) && 
 			is_dir($this->backup_dir) && 
-			is_dir($this->json_path)
+			is_dir($this->json_path) && 
+			$this->getPermition($this->option['_root'])==$this->option['uploadable_perm'] &&  
+			$this->getPermition($this->option['_path'])==$this->option['uploadable_perm'] &&  
+			$this->getPermition($this->backup_dir)==$this->option['uploadable_perm'] &&  
+			$this->getPermition($this->json_path)==$this->option['uploadable_perm']
 		){
-			$this->post_request();
+			$this->_request();
 			echo $this->backup_table();
 		}else{
 			echo $this->option['lang']['errorMsg'];
@@ -120,34 +131,18 @@ class backup{
 		}
 	}
 
-	private function get_all_dir_files(){
-		try{
-			$objects = new \RecursiveIteratorIterator(
-				    new \RecursiveDirectoryIterator($this->option['_root']),
-				    \RecursiveIteratorIterator::SELF_FIRST
-			);
-			foreach ($objects as $file => $object) {
-			    $basename = $object->getBasename();
-			    if ($basename == '.' or $basename == '..') {
-			        continue;
-			    }
-			    $fileData[] = $object->getPathname();
-			}
-			return $fileData;
-		}catch(Exception $e){
-			echo $this->option['lang']['errorMsg']." - ".$e;
-			exit();
-		}
+	private function backButton(){
+		return sprintf(
+			'<a href="%s" style="%s">&larr;&nbsp;&nbsp;%s</a>', 
+			$this->option['slug']['home'],
+			$this->arrayToStyle($this->option['css']['addlink']),
+			$this->option['lang']['back']
+		);
 	}
 
 	private function backup_table(){
 		if($this->requests("GET","addbackup")=="true"){
-			$content = sprintf(
-				'<a href="%s" style="%s">&larr;&nbsp;&nbsp;%s</a>', 
-				$this->option['slug']['home'],
-				$this->arrayToStyle($this->option['css']['addlink']),
-				$this->option['lang']['back']
-			);
+			$content = $this->backButton();
 			$filex = json_encode($this->get_all_dir_files());
 
 			$add_backup_label = $this->arrayToStyle($this->option['css']['add_backup_label']);
@@ -224,14 +219,22 @@ class backup{
 					<td>%s</td>
 				</tr>
 				%s
-				</table>',
+				</table>
+				<script type="text/javascript">
+				function comf(g){
+					if(confirm("%s")){
+						location.href = g; 
+					}
+				}
+				</script>',
 				$this->arrayToStyle($this->option['css']['table']), 
 				$this->arrayToStyle($this->option['css']['table.tr.head']), 
 				$this->option['lang']['name'], 
 				$this->option['lang']['backup'], 
 				$this->option['lang']['date'], 
 				$this->option['lang']['action'], 
-				$this->load_tgzs()
+				$this->load_tgzs(),
+				$this->option['lang']['delBackup']
 			);
 		}
 		
@@ -282,11 +285,19 @@ class backup{
 						$out .= sprintf('<td>%s</td>', $j['backup']);
 						$out .= sprintf('<td>%s</td>', $j['date']);
 						$backup_actions = $this->arrayToStyle($this->option['css']['backup_actions']);
+						$remove_link = sprintf(
+							'%s&d=%s&f=%s&j=%s',
+							$this->option['slug']['removelink'], 
+							$j['date'],
+							$j['filename'],
+							$j['json_file']
+						);
 						$out .= sprintf(
-							'<td><a href="%s" style="%s" target="_blank">%s</a> / <a href="" style="%s">%s</a></td>',
+							'<td><a href="%s" style="%s" target="_blank">%s</a> / <a href="javascript:void(0)" onclick="comf(\'%s\')" style="%s">%s</a></td>',
 							$download, 
 							$backup_actions,
 							$lang_download,
+							$remove_link,
 							$backup_actions,
 							$this->option['lang']['delete']
 						);
@@ -298,7 +309,7 @@ class backup{
 		return $out;
 	}
 
-	private function post_request(){
+	private function _request(){
 		if($this->requests("POST","bpath") && $this->requests("POST","aname")){
 			$backup = str_replace(
 				array(
@@ -314,6 +325,30 @@ class backup{
 				)
 			);
 			$this->tgz($backup, $this->requests("POST","aname"));
+		}else if($this->requests("GET","removebackup")=="true"){
+			$rmFolder = sprintf(
+				"%s/%s", 
+				$this->backup_dir,
+				$this->requests("GET","d")
+			);
+			$rmFile = sprintf(
+				"%s/%s",
+				$rmFolder,
+				$this->requests("GET","f")
+			);
+			$rmJson = sprintf(
+				"%s/%s.json",
+				$this->json_path,
+				$this->requests("GET","j")
+			);
+			if(file_exists($rmFile) && file_exists($rmJson)){
+				@unlink($rmJson);
+				@unlink($rmFile);
+				if($this->IsEmptyFolder($rmFolder)){
+					@rmdir($rmFolder);
+				}
+			}
+			self::url($this->option['slug']['home']);
 		}
 	}
 
@@ -321,6 +356,15 @@ class backup{
 		if((is_dir($backup) || is_file($backup)) && !empty($archive_name)){
 			$date = date("d-m-Y");
 			$tgzname = date("H-i-s").".tgz";
+			$jsonFileName = time();
+			$jjson = sprintf(
+				'{"name":"%s","backup":"%s","date":"%s","filename":"%s","json_file":"%s"}',
+				$archive_name,
+				$backup,
+				$date,
+				$tgzname,
+				$jsonFileName
+			);
 			$sh = sprintf(
 				"mkdir '%s/%s'; ",
 				$this->backup_dir,
@@ -332,25 +376,58 @@ class backup{
 				$date,
 				$tgzname,
 				$backup
-			);
-			$jjson = sprintf(
-				'{"name":"%s","backup":"%s","date":"%s","filename":"%s"}',
-				$archive_name,
-				$backup,
-				$date,
-				$tgzname
-			);
+			);			
 			$sh .= sprintf(
 				"echo '%s' > '%s/%s.json'",
 				$jjson, 
 				$this->json_path,
-				time()
+				$jsonFileName
 			); 
 			shell_exec($sh);
+			echo $this->backButton();
+			echo sprintf(
+				"<p style='%s'>%s</p>",
+				$this->arrayToStyle($this->option['css']['success']),
+				$this->option['lang']['success']
+			);
+			exit();
 		}else{
 			echo $this->option['lang']['errorMsg'];
 			exit();
 		}
+	}
+
+	private function get_all_dir_files(){
+		try{
+			$objects = new \RecursiveIteratorIterator(
+				    new \RecursiveDirectoryIterator($this->option['_root']),
+				    \RecursiveIteratorIterator::SELF_FIRST
+			);
+			foreach ($objects as $file => $object) {
+			    $basename = $object->getBasename();
+			    if ($basename == '.' or $basename == '..') {
+			        continue;
+			    }
+			    $fileData[] = $object->getPathname();
+			}
+			return $fileData;
+		}catch(Exception $e){
+			echo $this->option['lang']['errorMsg']." - ".$e;
+			exit();
+		}
+	}
+
+	private function IsEmptyFolder($folder) {
+        return (count(array_diff(glob($folder.DIRECTORY_SEPARATOR."*"), Array(".", ".."))) == 0);
+    }
+
+	private static function url($url=""){
+		if(empty($url)){
+			echo '<meta http-equiv="refresh" content="0"/>';
+		}else{
+			echo '<meta http-equiv="refresh" content="0; url='.$url.'"/>';
+		}
+		exit();
 	}
 
 	private function requests($type,$item){
@@ -361,6 +438,21 @@ class backup{
 		}else{
 			return '';
 		}
+	}
+
+	private function getPermition($dir){
+		if(is_dir($dir)){
+			$fileperms = substr(
+				sprintf(
+					'%o', 
+					fileperms($dir)
+				), 
+				-4
+			);
+			return $fileperms;
+		}
+		echo $this->option['lang']['errorMsg'];
+		exit();
 	}
 
 	private function arrayToStyle($array){
@@ -376,7 +468,7 @@ class backup{
 				));
 			}
 		}catch(Exception $e){
-			$this->outMessage = sprintf(
+			echo sprintf(
 				'%s%s', 
 				$this->option['lang']['errorMsg'],
 				$e
