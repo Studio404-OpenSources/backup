@@ -2,6 +2,9 @@
 namespace studio404;
 
 class backup{
+
+	public $outMessage;
+
 	function __construct($options){
 		$secondary = array(
 			"css"=>array(
@@ -99,26 +102,42 @@ class backup{
 			$this->option['_path'],
 			'json'
 		);
-		$this->post_request();
+		
 	}
 
 	public function load(){
-		echo $this->backup_table();
+		if(
+			is_dir($this->option['_root']) && 
+			is_dir($this->option['_path']) && 
+			is_dir($this->backup_dir) && 
+			is_dir($this->json_path)
+		){
+			$this->post_request();
+			echo $this->backup_table();
+		}else{
+			echo $this->option['lang']['errorMsg'];
+			exit();
+		}
 	}
 
 	private function get_all_dir_files(){
-		$objects = new \RecursiveIteratorIterator(
-			    new \RecursiveDirectoryIterator($this->option['_root']),
-			    \RecursiveIteratorIterator::SELF_FIRST
-		);
-		foreach ($objects as $file => $object) {
-		    $basename = $object->getBasename();
-		    if ($basename == '.' or $basename == '..') {
-		        continue;
-		    }
-		    $fileData[] = $object->getPathname();
+		try{
+			$objects = new \RecursiveIteratorIterator(
+				    new \RecursiveDirectoryIterator($this->option['_root']),
+				    \RecursiveIteratorIterator::SELF_FIRST
+			);
+			foreach ($objects as $file => $object) {
+			    $basename = $object->getBasename();
+			    if ($basename == '.' or $basename == '..') {
+			        continue;
+			    }
+			    $fileData[] = $object->getPathname();
+			}
+			return $fileData;
+		}catch(Exception $e){
+			echo $this->option['lang']['errorMsg']." - ".$e;
+			exit();
 		}
-		return $fileData;
 	}
 
 	private function backup_table(){
@@ -130,19 +149,15 @@ class backup{
 				$this->option['lang']['back']
 			);
 			$filex = json_encode($this->get_all_dir_files());
-			// echo "<pre>";
-			// print_r($filex);
-			// echo "</pre>";
 
 			$add_backup_label = $this->arrayToStyle($this->option['css']['add_backup_label']);
 			$add_backup_input_text = $this->arrayToStyle($this->option['css']['add_backup_input_text']);
 			$content .= sprintf(
-				'
-				<h3 style="%s">%s</h3><div style="clear:both"></div>
+				'<h3 style="%s">%s</h3><div style="clear:both"></div>
 				<form style="%s" action="%s" method="post">
-				<label style="%s">%s:</label>
+				<label style="%s">%s: <font color="red">*</font></label>
 				<input type="text" name="aname" value="" style="%s" />
-				<label style="%s">%s:</label>
+				<label style="%s">%s: <font color="red">*</font></label>
 				<input type="text" style="%s" id="bpath" name="bpath" value="%s" autocomplete="off" />
 				<div style="%s" id="sugg"></div>
 				<input type="submit" value="&#43;&nbsp;&nbsp;%s" style="%s" />
@@ -228,55 +243,76 @@ class backup{
 		$out = '';
 		$command = 'ls '.$this->json_path.' 2>&1';
 		$shell = shell_exec($command);
-		$files = explode(".json", $shell);
-		$files = array_map('trim', $files);
-		$jArray = array();
-		foreach ($files as $val) {
-			if(!empty($val) && $val != ""){
-				$json = sprintf(
-					'%s/%s.json',
-					$this->json_path, 
-					$val
-				);				
-				if(file_exists($json)){
-					$jArray[] = json_decode(file_get_contents($json), true);
-				}				
-			}
-		}
-		$jArray = array_reverse($jArray);
-		foreach ($jArray as $j) {
-			$download = sprintf(
-				'%s/%s/%s',
-				$this->backup_dir, 
-				$j['date'], 
-				$j['filename']
-			);
+		if(!empty($shell)){
+			$files = explode(".json", $shell);
+			$files = array_map('trim', $files);
+			if(!empty($files) && count($files))
+			{
+				$jArray = array();
+				foreach ($files as $val) {
+					if(!empty($val) && $val != ""){
+						$json = sprintf(
+							'%s/%s.json',
+							$this->json_path, 
+							$val
+						);				
+						if(file_exists($json)){
+							$jArray[] = json_decode(file_get_contents($json), true);
+						}				
+					}
+				}
+				if(count($jArray)){
+					$jArray = array_reverse($jArray);
+					foreach ($jArray as $j) {
+						$download = sprintf(
+							'%s/%s/%s',
+							$this->backup_dir, 
+							$j['date'], 
+							$j['filename']
+						);
+						if(!file_exists($download)){
+							$download = "javascript:void(0);";
+							$lang_download = $this->option['lang']['download_pendding'];
+						}else{
+							$lang_download = $this->option['lang']['download'];
+						}
 
-			$out .= '<tr>';
-			$out .= sprintf('<td>%s</td>', $j['name']);
-			$out .= sprintf('<td>%s</td>', $j['backup']);
-			$out .= sprintf('<td>%s</td>', $j['date']);
-			$backup_actions = $this->arrayToStyle($this->option['css']['backup_actions']);
-			$out .= sprintf(
-				'<td><a href="%s" style="%s" target="_blank">%s</a> / <a href="" style="%s">%s</a></td>',
-				$download, 
-				$backup_actions,
-				$this->option['lang']['download'],
-				$backup_actions,
-				$this->option['lang']['delete']
-			);
-			$out .= '</tr>';
+						$out .= '<tr>';
+						$out .= sprintf('<td>%s</td>', $j['name']);
+						$out .= sprintf('<td>%s</td>', $j['backup']);
+						$out .= sprintf('<td>%s</td>', $j['date']);
+						$backup_actions = $this->arrayToStyle($this->option['css']['backup_actions']);
+						$out .= sprintf(
+							'<td><a href="%s" style="%s" target="_blank">%s</a> / <a href="" style="%s">%s</a></td>',
+							$download, 
+							$backup_actions,
+							$lang_download,
+							$backup_actions,
+							$this->option['lang']['delete']
+						);
+						$out .= '</tr>';
+					}
+				}
+			}
 		}
 		return $out;
 	}
 
 	private function post_request(){
 		if($this->requests("POST","bpath") && $this->requests("POST","aname")){
-			$backup = sprintf(
-				'%s',
-				$this->requests("POST","bpath")
+			$backup = str_replace(
+				array(
+					";",
+					"../",
+					"$",
+					"&"
+				),
+				"",
+				sprintf(
+					'%s',
+					$this->requests("POST","bpath")
+				)
 			);
-
 			$this->tgz($backup, $this->requests("POST","aname"));
 		}
 	}
@@ -285,11 +321,35 @@ class backup{
 		if((is_dir($backup) || is_file($backup)) && !empty($archive_name)){
 			$date = date("d-m-Y");
 			$tgzname = date("H-i-s").".tgz";
-			$sh = "mkdir '".$this->backup_dir."/".$date."'; ";
-			$sh .= "tar czf '".$this->backup_dir."/".$date."/".$tgzname."' ".$backup."; ";
-			$jjson = '{"name":"'.$archive_name.'","backup":"'.$backup.'","date":"'.$date.'","filename":"'.$tgzname.'"}';
-			$sh .= "echo '".$jjson."' > ".$this->json_path."/".time().".json"; 
+			$sh = sprintf(
+				"mkdir '%s/%s'; ",
+				$this->backup_dir,
+				$date
+			);
+			$sh .= sprintf(
+				"tar czf '%s/%s/%s' '%s'; ",
+				$this->backup_dir,
+				$date,
+				$tgzname,
+				$backup
+			);
+			$jjson = sprintf(
+				'{"name":"%s","backup":"%s","date":"%s","filename":"%s"}',
+				$archive_name,
+				$backup,
+				$date,
+				$tgzname
+			);
+			$sh .= sprintf(
+				"echo '%s' > '%s/%s.json'",
+				$jjson, 
+				$this->json_path,
+				time()
+			); 
 			shell_exec($sh);
+		}else{
+			echo $this->option['lang']['errorMsg'];
+			exit();
 		}
 	}
 

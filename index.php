@@ -19,6 +19,7 @@ $main_options = array(
 		"errorMsg"=>"მოხდა შეცდომა !", 
 		"delete"=>"წაშლა", 
 		"download"=>"ჩამოტვირთვა", 
+		"download_pendding"=>"ფაილი ვერ მოიძებნა", 
 		"back"=>"უკან", 
 		"addBackup"=>"რეზერვის დამატება",
 		"addBackupTitle"=>"რეზერვის სახელი",
