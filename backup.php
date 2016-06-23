@@ -118,10 +118,10 @@ class backup{
 			is_dir($this->option['_path']) && 
 			is_dir($this->backup_dir) && 
 			is_dir($this->json_path) && 
-			$this->getPermition($this->option['_root'])==$this->option['uploadable_perm'] &&  
-			$this->getPermition($this->option['_path'])==$this->option['uploadable_perm'] &&  
-			$this->getPermition($this->backup_dir)==$this->option['uploadable_perm'] &&  
-			$this->getPermition($this->json_path)==$this->option['uploadable_perm']
+			self::getPermition($this->option['_root'])==$this->option['uploadable_perm'] &&  
+			self::getPermition($this->option['_path'])==$this->option['uploadable_perm'] &&  
+			self::getPermition($this->backup_dir)==$this->option['uploadable_perm'] &&  
+			self::getPermition($this->json_path)==$this->option['uploadable_perm']
 		){
 			$this->_request();
 			echo $this->backup_table();
@@ -141,7 +141,7 @@ class backup{
 	}
 
 	private function backup_table(){
-		if($this->requests("GET","addbackup")=="true"){
+		if(self::requests("GET","addbackup")=="true"){
 			$content = $this->backButton();
 			$filex = json_encode($this->get_all_dir_files());
 
@@ -310,7 +310,7 @@ class backup{
 	}
 
 	private function _request(){
-		if($this->requests("POST","bpath") && $this->requests("POST","aname")){
+		if(self::requests("POST","bpath") && self::requests("POST","aname")){
 			$backup = str_replace(
 				array(
 					";",
@@ -321,30 +321,30 @@ class backup{
 				"",
 				sprintf(
 					'%s',
-					$this->requests("POST","bpath")
+					self::requests("POST","bpath")
 				)
 			);
-			$this->tgz($backup, $this->requests("POST","aname"));
-		}else if($this->requests("GET","removebackup")=="true"){
+			$this->tgz($backup, self::requests("POST","aname"));
+		}else if(self::requests("GET","removebackup")=="true"){
 			$rmFolder = sprintf(
 				"%s/%s", 
 				$this->backup_dir,
-				$this->requests("GET","d")
+				self::requests("GET","d")
 			);
 			$rmFile = sprintf(
 				"%s/%s",
 				$rmFolder,
-				$this->requests("GET","f")
+				self::requests("GET","f")
 			);
 			$rmJson = sprintf(
 				"%s/%s.json",
 				$this->json_path,
-				$this->requests("GET","j")
+				self::requests("GET","j")
 			);
 			if(file_exists($rmFile) && file_exists($rmJson)){
 				@unlink($rmJson);
 				@unlink($rmFile);
-				if($this->IsEmptyFolder($rmFolder)){
+				if(self::IsEmptyFolder($rmFolder)){
 					@rmdir($rmFolder);
 				}
 			}
@@ -417,44 +417,6 @@ class backup{
 		}
 	}
 
-	private function IsEmptyFolder($folder) {
-        return (count(array_diff(glob($folder.DIRECTORY_SEPARATOR."*"), Array(".", ".."))) == 0);
-    }
-
-	private static function url($url=""){
-		if(empty($url)){
-			echo '<meta http-equiv="refresh" content="0"/>';
-		}else{
-			echo '<meta http-equiv="refresh" content="0; url='.$url.'"/>';
-		}
-		exit();
-	}
-
-	private function requests($type,$item){
-		if($type=="POST" && isset($_POST[$item])){
-			return filter_input(INPUT_POST, $item);
-		}else if($type=="GET" && isset($_GET[$item])){
-			return filter_input(INPUT_GET, $item);
-		}else{
-			return '';
-		}
-	}
-
-	private function getPermition($dir){
-		if(is_dir($dir)){
-			$fileperms = substr(
-				sprintf(
-					'%o', 
-					fileperms($dir)
-				), 
-				-4
-			);
-			return $fileperms;
-		}
-		echo $this->option['lang']['errorMsg'];
-		exit();
-	}
-
 	private function arrayToStyle($array){
 		$output = '';
 		try{
@@ -475,6 +437,55 @@ class backup{
 			);
 		}
 		return $output;
+	}
+
+	private static function IsEmptyFolder($folder) {
+		$glob = sprintf(
+			'%s%s%s',
+			$folder,
+			DIRECTORY_SEPARATOR,
+			"*"
+		);
+		return (count(
+			array_diff(
+				glob($glob), 
+				Array(".", "..")
+			)) == 0
+		);
+	}
+
+	private static function url($url=""){
+		if(empty($url)){
+			echo '<meta http-equiv="refresh" content="0"/>';
+		}else{
+			echo '<meta http-equiv="refresh" content="0; url='.$url.'"/>';
+		}
+		exit();
+	}
+
+	private static function requests($type,$item){
+		if($type=="POST" && isset($_POST[$item])){
+			return filter_input(INPUT_POST, $item);
+		}else if($type=="GET" && isset($_GET[$item])){
+			return filter_input(INPUT_GET, $item);
+		}else{
+			return '';
+		}
+	}
+
+	private static function getPermition($dir){
+		if(is_dir($dir)){
+			$fileperms = substr(
+				sprintf(
+					'%o', 
+					fileperms($dir)
+				), 
+				-4
+			);
+			return $fileperms;
+		}
+		echo $this->option['lang']['errorMsg'];
+		exit();
 	}
 
 }
