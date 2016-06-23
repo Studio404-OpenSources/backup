@@ -3,8 +3,6 @@ namespace studio404;
 
 class backup{
 
-	public $outMessage;
-
 	function __construct($options){
 		$secondary = array(
 			"css"=>array(
@@ -20,7 +18,7 @@ class backup{
 				"table"=>array(
 					"margin"=>"10px 5px",
 					"padding"=>"0px",
-					"width"=>"calc(100% - 10px)",
+					"width"=>"calc(100% - 10px); -webkit-calc(100% - 10px); -moz-calc(100% - 10px)",
 					"float"=>"left",
 					"border"=>"solid 1px #f2f2f2"
 				),
@@ -36,7 +34,7 @@ class backup{
 				"add_backup_header"=>array(
 					"margin"=>"10px 5px",
 					"padding"=>"5px 10px",
-					"width"=>"calc(100% - 30px)",
+					"width"=>"calc(100% - 30px); -webkit-calc(100% - 30px); -moz-calc(100% - 30px)",
 					"font-size"=>"16px",
 					"line-height"=>"30px",
 					"background-color"=>"#cccccc",
@@ -46,7 +44,7 @@ class backup{
 				"add_backup_form"=>array(
 					"margin"=>"0px 5px",
 					"padding"=>"0px",
-					"width"=>"calc(100% - 10px)"
+					"width"=>"calc(100% - 10px); -webkit-calc(100% - 10px); -moz-calc(100% - 10px)"
 				),
 				"add_backup_label"=>array(
 					"margin"=>"0px",
@@ -77,7 +75,7 @@ class backup{
 					"margin"=>"0px",
 					"padding"=>"5px",
 					"background-color"=>"#f2f2f2",
-					"width"=>"calc(100% - 10px)",
+					"width"=>"calc(100% - 10px); -webkit-calc(100% - 10px); -moz-calc(100% - 10px)",
 					"float"=>"left",
 					"line-height"=>"20px",
 					"display"=>"none"
