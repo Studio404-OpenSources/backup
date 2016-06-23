@@ -1,16 +1,28 @@
 <?php
 header("Content-type: text/html; charset=utf-8");
-
+date_default_timezone_set('Asia/Tbilisi');
 
 @include "backup.php"; 
 $main_options = array(
-	"project_path"=>"_temp",
+	"_root"=>$_SERVER['DOCUMENT_ROOT'],
+	"_path"=>"_temp",
 	"slug"=>array(
-		"addlink"=>"index.php?addbackup=true"
+		"home"=>"index.php",
+		"addlink"=>"index.php?addbackup=true",
 	),
 	"lang"=>array(
+		"name"=>"დასახელება",
+		"backup"=>"რეზერვი",
+		"date"=>"თარიღი",
+		"action"=>"მოქმედება",
 		"addlink"=>"დამატება",
-		"errorMsg"=>"მოხდა შეცდომა !"
+		"errorMsg"=>"მოხდა შეცდომა !", 
+		"delete"=>"წაშლა", 
+		"download"=>"ჩამოტვირთვა", 
+		"back"=>"უკან", 
+		"addBackup"=>"რეზერვის დამატება",
+		"addBackupTitle"=>"რეზერვის სახელი",
+		"chooseDir"=>"აირჩიეთ დირექტორია"
 	)
 );
 
