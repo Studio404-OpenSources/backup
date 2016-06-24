@@ -125,7 +125,17 @@ class backup{
 			$this->get_request();
 			echo $this->backup_table();
 		}else{
-			echo $this->option['lang']['errorMsg'];
+			echo sprintf(
+				$this->option['lang']['errorMsgPerm'],
+				$this->option['_root'],
+				$this->option['_root'],
+				$this->option['_path'],
+				$this->option['_root'],
+				$this->backup_dir,
+				$this->option['_root'],
+				$this->json_path,
+				$this->option['uploadable_perm']
+			);
 			exit();
 		}
 	}
