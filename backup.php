@@ -119,9 +119,10 @@ class backup{
 			self::getPermition($this->option['_root'])==$this->option['uploadable_perm'] &&  
 			self::getPermition($this->option['_path'])==$this->option['uploadable_perm'] &&  
 			self::getPermition($this->backup_dir)==$this->option['uploadable_perm'] &&  
-			self::getPermition($this->json_path)==$this->option['uploadable_perm']
+			self::getPermition($this->json_path)==$this->option['uploadable_perm'] && 
+			function_exists('shell_exec')
 		){
-			$this->_request();
+			$this->get_request();
 			echo $this->backup_table();
 		}else{
 			echo $this->option['lang']['errorMsg'];
@@ -307,7 +308,7 @@ class backup{
 		return $out;
 	}
 
-	private function _request(){
+	private function get_request(){
 		if(self::requests("POST","bpath") && self::requests("POST","aname")){
 			$backup = str_replace(
 				array(
